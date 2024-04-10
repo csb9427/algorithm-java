@@ -1,109 +1,116 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.StringTokenizer;
 
-
 /*
- * 판의 크기인 N이 들어오고 폐업시키지 않아야 하는 치킨집의 개수 M이 들어온다.
- * 즉 M개의 개수를 제외하고 가장 치킨 거리가 긴 순으로 폐업을 시켜야만 한다.
+ * 치킨 배달
+ * 크기가 N * N인 도시가 있다.
+ * 각 칸은 빈 칸, 치킨집, 집 중 하나이다.
+ * 도시의 칸은 (r,c)고 1부터 시작한다.
+ * 치킨 거리는 가장 가까운 치킨집과의 거리이다.
  * 
- * 각 치킨집 별로 집과의 거리를 구한다. 집과의 거리들이 가장 먼 치킨집을 M개의 수가 나올 때까지
- * 빼주면 된다.
+ * 도시의 치킨 거리는 집의 r값과 치킨집의 r값을 뺴고 계산하는 것이다.
  * 
- * 치킨 거리 계산 식은 집의 위치 가로와 세로와 치킨집의 위치 가로와 세로를 서로 빼주고 절댓값을 씌운 후 더해준다.
- * 즉 치킨 거리를 다 더한 후 해당 치킨집을 지우고 나면 된다.!
+ * 치킨집의 개수를 최대 M개를 유지하면서 동시에 일부 치킨집을 폐업 시킨다.
  * 
- * 집들의 위치를 저장할 때 애초에 i와 j로 계산해두고 치킨 집 하나당 비교하며 계산해 나간다.
+ * 도시의 치킨 거리가 가장 적게 될 치킨 거리를 구하시오
+ * 
+ * 도시의 정보는 0은 빈칸 1은 집 2는 치킨집을 의미한다.
+ * 
+ * 이 문제는 가장 먼저 조합이다. 조합으로 각 치킨집이 될 조합을 구하고
+ * 치킨 거리를 구하도록 한다.
+ * 
+ * 1의 위치를 기억해야 한다.
+ *
+ * 
  */
 
-
 public class Main {
-	static int [][] arr;
-	static int [][] home;
-	static int [][] chicken;
-	static int [][] sum;
-	static boolean[] selected;
-	static int minChickenDistance = Integer.MAX_VALUE;
 	
-    public static void main(String[] args) throws NumberFormatException, IOException {
-    	BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    	StringTokenizer st = new StringTokenizer(br.readLine());
-    	int N = Integer.parseInt(st.nextToken());
-    	int M = Integer.parseInt(st.nextToken());
-    	int hNum = 0;
-    	int cNum = 0;
-    	arr = new int[N][N];
-    	for(int i=0; i<N; i++) {
-    		st = new StringTokenizer(br.readLine());
-    		for(int j=0; j<N; j++) {
-    			arr[i][j] = Integer.parseInt(st.nextToken());
-    			if(arr[i][j]==1) hNum++;
-    			else if(arr[i][j]==2) cNum++;
-    		}
-    	}
-    	home = new int[hNum][2];
-    	chicken = new int[cNum][2];
-    	int num = 0;
-    	int num2 = 0;
-    	for(int i=0; i<N; i++) {
-    		for(int j=0; j<N; j++) {
-    			if(arr[i][j]==1) {
-    				home[num][0] = i+1;
-    				home[num][1] = j+1;
-    				num++;
-    			}
-    			else if(arr[i][j]==2) {
-    				chicken[num2][0] = i+1;
-    				chicken[num2][1] = j+1;
-    				num2++;
-    			}
-    		}
-    	}
-    	
-    	sum = new int[hNum][cNum]; 
-    	for(int i=0; i<hNum; i++) {
-    		for(int j=0; j<cNum; j++) {
-    			sum[i][j] = Math.abs(home[i][0]- chicken[j][0])+Math.abs(home[i][1] - chicken[j][1]);
-    		}
-    	}
-    	
-    	 selected = new boolean[cNum];
-         selectChicken(0, cNum, M, 0);
+	static int N, M, hSize=0, cSize = 0;
+	static int [][]map;
+	static boolean [][]home;
+	static boolean [][]chicken;
+	static boolean [] check;
+	static int ans = Integer.MAX_VALUE;
+	static int[][] choiceChicken;
+	
 
-         System.out.println(minChickenDistance);
-    	
-    }
-    
-    static void selectChicken(int index, int cNum, int M, int count) {
-        if (count == M) {
-            int minSum = calculateMinSum(sum, selected);
-            minChickenDistance = Math.min(minChickenDistance, minSum);
-            return;
+    public static void main(String[] args) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        StringTokenizer st = new StringTokenizer(br.readLine());
+        
+        N = Integer.parseInt(st.nextToken());
+        M = Integer.parseInt(st.nextToken());
+        
+        map = new int[N+1][N+1];
+        home = new boolean[N+1][N+1];
+        chicken = new boolean[N+1][N+1];
+        
+        
+        for(int i=1; i<=N; i++) {
+        	st = new StringTokenizer(br.readLine());
+        	for(int j=1; j<=N; j++) {
+        		map[i][j] = Integer.parseInt(st.nextToken());
+        		if(map[i][j]==1) {
+        			home[i][j] = true;
+        			hSize++;
+        		}
+        		else if(map[i][j] == 2) {
+        			chicken[i][j] = true;
+        			cSize++;
+        		}
+        	}
         }
-        if (index == cNum) return;
-
-        selected[index] = true;
-        selectChicken(index + 1, cNum, M, count + 1);
-
-        selected[index] = false;
-        selectChicken(index + 1, cNum, M, count);
-    }
-    
-    static int calculateMinSum(int[][] sum, boolean[] selected) {
-        int minSum = 0;
-        for (int i = 0; i < home.length; i++) {
-            int minDist = Integer.MAX_VALUE;
-            for (int j = 0; j < selected.length; j++) {
-                if (selected[j]) {
-                    minDist = Math.min(minDist, sum[i][j]);
+        choiceChicken = new int[cSize + 1][2];
+        int idx = 1;
+        for (int i = 1; i <= N; i++) {
+            for (int j = 1; j <= N; j++) {
+                if (chicken[i][j]) {
+                	choiceChicken[idx][0] = i;
+                	choiceChicken[idx][1] = j;
+                    idx++;
                 }
             }
-            minSum += minDist;
         }
-        return minSum;
+        
+        check = new boolean[cSize+1];
+        
+        answer(1, 0);
+        
+        System.out.println(ans);
     }
+    
+    
+    private static void answer(int x, int count) {
+        if(count == M) {
+            int t = 0;
+            
+            for(int i = 1; i <= N; i++) {
+                for(int j = 1; j <= N; j++) {
+                    if(home[i][j]) {
+                        int min = Integer.MAX_VALUE;
+                        for (int k = 1; k <= cSize; k++) {
+                            if (check[k]) {
+                                int l = choiceChicken[k][0];
+                                int m = choiceChicken[k][1];
+                                int d = Math.abs(i - l) + Math.abs(j - m);
+                                min = Math.min(min, d);
+                            }
+                        }
+                        t += min;
+                    }
+                }
+            }
+            ans = Math.min(ans, t);
+        }
+        
+        for (int i = x; i <= cSize; i++) {
+            check[i] = true;
+            answer(i + 1, count + 1);
+            check[i] = false;
+        }
+    }
+
 }
